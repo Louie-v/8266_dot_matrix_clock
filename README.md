@@ -10,7 +10,10 @@
  - Airkiss连网
  - NTP授时
  - 支持自定义点阵个数
- ![clock](http://7xkdyj.com1.z0.glb.clouddn.com/dot_clcokdot_clock_2_1.gif)
+ 
+ 
+ 
+  ![clock](http://7xkdyj.com1.z0.glb.clouddn.com/dot_clcokdot_clock_2_1.gif)
 
 # License
 
