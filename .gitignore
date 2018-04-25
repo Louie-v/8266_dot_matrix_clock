@@ -1,0 +1,11 @@
+﻿
+*.db
+*.tmp
+other/*
+.vscode/*
+GPATH
+GRTAGs
+GTAGS
+
+
+
