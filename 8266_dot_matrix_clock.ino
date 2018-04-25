@@ -186,12 +186,8 @@ static const byte font[] PROGMEM=
 	0x41, 0x7f, 0x08, 0x00, 	// }		ASCII--125
 	0x01, 0x03, 0x02, 0x00, 	// ~		ASCII--126
 	0x7f, 0x7f, 0x7f, 0x00, 	// Full Filled		ASCII--127
-
-	0x22, 0x3E, 0x01, 0x00,		//℃		~ASCII-128
-	0x00, 0x6C, 0x00, 0x00,		//dot up for time ~ASCII-129
-	0x00, 0x36, 0x00, 0x00,		//dot down fot time ~ASCII-130
-
 };
+
 //RTC define
 #define TZ 8       // (utc+) TZ in hours
 #define DST_MN	0      // use 60mn for summer time in some countries
