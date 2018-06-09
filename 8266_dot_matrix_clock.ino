@@ -22,8 +22,10 @@
 #define DEBUG
 #ifdef DEBUG
 #define DOUT(w) Serial.println(w)
+#define DOUTH(w,h) Serial.println(w,h)
 #else
 #define DOUT(w) 
+#define DOUTH(w,h)
 #endif
 
 #define DS_PIN 5
@@ -330,7 +332,7 @@ void dis_clear_all()
 void dis_auto_set_intensity()
 {
 	byte i = adc_get_light_intensity();
-	i = i > 16 ? 15:i;//亮度范围0~15
+	i = i >= 16 ? 15:i;//亮度范围0~15
 	//todo:逐级调整
 	DOUT(i);
 	for(byte address = 0; address < LED_NUM_DEVICES; address++)
@@ -423,7 +425,6 @@ void dis_load_display_string_in_disarray(char s[], DISPLAY_ARR * d_arr)
  */
 void dis_move_left(byte * d_buff, DISPLAY_ARR * d_arr)
 {
-	//todo:直接传入显示数组byte *
 	byte _size = (*d_arr)->size;
 	if (_size >= 32)
 	{
@@ -518,7 +519,6 @@ void dis_datetime_move_out_2()
  */
 void dis_datetime_move_in()
 {
-	//todo:动态内存
 	byte _t_buff[LED_NUM_COL] = {};
 	memcpy(_t_buff, display_buff, LED_NUM_COL);
 	memset(display_buff, 0x00, LED_NUM_COL);
@@ -544,8 +544,7 @@ void dis_datetime_move_in()
  */
 void dis_datetime_move_in_2()
 {
-		//todo:动态内存
-		//todo:最后一位小动画
+
 	byte _t_buff[LED_NUM_COL] = {};
 	memcpy(_t_buff, display_buff, LED_NUM_COL);
 	memset(display_buff, 0x00, LED_NUM_COL);
@@ -569,12 +568,31 @@ void dis_datetime_move_in_2()
 }
 
 /**
- * 【时间、日期、温度】显示数据获取
+ * 【时间、日期】显示数据获取
  */
-void dis_set_datetimetemp_dis_buff()
+void dis_set_timedate_dis_buff()
 {
 	struct tm _tm_time;
 	rtc_get_time(&_tm_time);
+
+	display_time_string_buff[0] = (char)(_tm_time.tm_hour / 10 + 48);
+	display_time_string_buff[1] = (char)(_tm_time.tm_hour % 10 + 48);
+	// display_time_string_buff[2] = 0x01; //special font,动态显示
+	display_time_string_buff[3] = (char)(_tm_time.tm_min / 10 + 48);
+	display_time_string_buff[4] = (char)(_tm_time.tm_min % 10 + 48);
+
+	display_date_string_buff[0] = (char)(_tm_time.tm_mon / 10 + 48);
+	display_date_string_buff[1] = (char)(_tm_time.tm_mon % 10 + 48);
+	display_date_string_buff[2] = 0x04;//special font
+	display_date_string_buff[3] = (char)(_tm_time.tm_mday / 10 + 48);
+	display_date_string_buff[4] = (char)(_tm_time.tm_mday % 10 + 48);
+}
+
+/**
+ * 【温度】显示数据获取
+ */
+void dis_set_temp_dis_buff()
+{
 	byte temp[2] = {0x00, 0x00};
 	if(ds_addr[0])//判断18B20是否正确初始化
 	{
@@ -589,24 +607,20 @@ void dis_set_datetimetemp_dis_buff()
 		}
 	}
 
-	//+48 is num2char
-	display_time_string_buff[0] = (char)(_tm_time.tm_hour / 10 + 48);
-	display_time_string_buff[1] = (char)(_tm_time.tm_hour % 10 + 48);
-	display_time_string_buff[2] = 0x01; //special font
-	display_time_string_buff[3] = (char)(_tm_time.tm_min / 10 + 48);
-	display_time_string_buff[4] = (char)(_tm_time.tm_min % 10 + 48);
-
-	display_date_string_buff[0] = (char)(_tm_time.tm_mon / 10 + 48);
-	display_date_string_buff[1] = (char)(_tm_time.tm_mon % 10 + 48);
-	display_date_string_buff[2] = 0x04;//special font
-	display_date_string_buff[3] = (char)(_tm_time.tm_mday / 10 + 48);
-	display_date_string_buff[4] = (char)(_tm_time.tm_mday % 10 + 48);
-
 	display_temp_string_buff[0] = (char)(temp[0] / 10 + 48);
 	display_temp_string_buff[1] = (char)(temp[0] % 10 + 48);
 	display_temp_string_buff[2] = '.';
 	display_temp_string_buff[3] = (char)(temp[1] + 48);
 	display_temp_string_buff[4] = 0x03;//special font
+}
+
+/**
+ * 【时间、日期、温度】显示数据获取
+ */
+void dis_set_datetimetemp_dis_buff()
+{
+	dis_set_timedate_dis_buff();
+	dis_set_temp_dis_buff();
 }
 
 /**
@@ -1042,7 +1056,7 @@ byte ds18b20_init(byte * addr)
  */
 byte ds18b20_get_temp(byte * temp, byte * addr )
 {
-	//todo:debug
+	
 	byte present = 0;
 	byte type_s;
 	byte data[12];
@@ -1051,19 +1065,19 @@ byte ds18b20_get_temp(byte * temp, byte * addr )
 	switch (addr[0]) 
 	{
 		case 0x10:
-		Serial.println("  Chip = DS18S20");  // or old DS1820
+		DOUT("  Chip = DS18S20");  // or old DS1820
 		type_s = 1;
 		break;
 		case 0x28:
-		Serial.println("  Chip = DS18B20");
+		DOUT("  Chip = DS18B20");
 		type_s = 0;
 		break;
 		case 0x22:
-		Serial.println("  Chip = DS1822");
+		DOUT("  Chip = DS1822");
 		type_s = 0;
 		break;
 		default:
-		Serial.println("Device is not a DS18x20 family device.");
+		DOUT("Device is not a DS18x20 family device.");
 		addr[0] = 0;
 		return 0;
 	} 
@@ -1079,18 +1093,18 @@ byte ds18b20_get_temp(byte * temp, byte * addr )
 	ds.select(addr);    
 	ds.write(0xBE);         // Read Scratchpad
 
-	Serial.print("  Data = ");
-	Serial.print(present, HEX);
-	Serial.print(" ");
+	DOUT("  Data = ");
+	DOUTH(present, HEX);
+	DOUT(" ");
 	for ( int i = 0; i < 9; i++) 
 	{           // we need 9 bytes
 		data[i] = ds.read();
-		Serial.print(data[i], HEX);
-		Serial.print(" ");
+		DOUTH(data[i], HEX);
+		DOUT(" ");
 	}
-	Serial.print(" CRC=");
-	Serial.print(OneWire::crc8(data, 8), HEX);
-	Serial.println();
+	DOUT(" CRC=");
+	DOUTH(OneWire::crc8(data, 8), HEX);
+	DOUT();
 
 	// Convert the data to actual temperature
 	// because the result is a 16 bit signed integer, it should
@@ -1159,10 +1173,34 @@ byte t_flag = 1;//显示内容标识
 
 void loop() 
 {
-	if(count % 10 == 0)//每10秒转换显示
+	//显示时间，动态间隔
+	if(1 == t_flag){
+		dis_set_timedate_dis_buff();
+		display_time_string_buff[2] = (display_time_string_buff[2] == 0x01)?0x02:0x01;
+		dis_relese_time();
+		dis_display();
+	}
+
+	byte t = count % 14 ;
+	switch(t)
 	{
-		dis_display_date2time_trans(t_flag);
-		++t_flag = t_flag == 4 ?1:t_flag;
+		case 0://切换到时间显示10s
+			t_flag = 1;
+			dis_display_date2time_trans(t_flag);
+			break;
+
+		case 10://切换到日期显示2s
+			t_flag = 2;
+			dis_display_date2time_trans(t_flag);
+			break;
+
+		case 12://切换到温度显示2s
+			t_flag = 3;
+			dis_display_date2time_trans(t_flag);
+			break;
+
+		default:
+			break;
 	}
 
 	if(28800 == count)//每7小时尝试NTP授时
