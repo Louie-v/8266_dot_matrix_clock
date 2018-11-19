@@ -333,10 +333,10 @@ void dis_auto_set_intensity()
 {
 	byte i = adc_get_light_intensity();
 	i = i >= 16 ? 15:i;//亮度范围0~15
-	//todo:逐级调整
+	//TODO:逐级调整
 	DOUT(i);
 	for(byte address = 0; address < LED_NUM_DEVICES; address++)
-	 {
+	{
 		max7219.setIntensity(address,i);
 	}
 }
@@ -356,6 +356,28 @@ void dis_display()
 		}
 	}
 }
+
+/**
+ * 按行显示，提高库引起的效率问题
+ */
+// void dis_display_row()
+// {
+// 	//列转行
+// 	byte display_buff_row[LED_NUM_COL] = {};
+// 	for (int i = 0; i < LED_NUM_COL; ++i)
+// 	{
+// 		byte d = 0x00;
+// 		d = display_buff[i++] & 0x80;
+// 		d = d | ((display_buff[i++] & 0x80) >> 1);
+// 		d = d | ((display_buff[i++] & 0x80) >> 2);
+// 		d = d | ((display_buff[i++] & 0x80) >> 3);
+// 		d = d | ((display_buff[i++] & 0x80) >> 4);
+// 		d = d | ((display_buff[i++] & 0x80) >> 5);
+// 		d = d | ((display_buff[i++] & 0x80) >> 6);
+// 		d = d | ((display_buff[i++] & 0x80) >> 7);
+// 	}
+// 	//按行显示
+// }
 
 /**
  * 【时间、日期、温度】单屏显示数据加载到显示缓存
@@ -399,7 +421,7 @@ void dis_load_string_in_disbuff(char s[])
 void dis_load_display_string_in_disarray(char s[], DISPLAY_ARR * d_arr)
 {
 	char * _p = s;
-	//todo:显示字符大于申请内存,不处理多于内容 
+	//TODO:显示字符大于申请内存,不处理多于内容 
 	int i = 0;
 	int len = ((*d_arr)->size) / FONT_WIDTH;
 	while (len)
@@ -495,7 +517,7 @@ void dis_datetime_move_out()
  */
 void dis_datetime_move_out_2()
 {
-	int len = strlen(display_time_string_buff);//todo:临时解决长度问题
+	int len = strlen(display_time_string_buff);//TODO:临时解决长度问题
 	int index_last_font = (LED_NUM_COL  + (len * (FONT_WIDTH)))/ 2 - 1;//最后一位
 	while(len)
 	{
@@ -512,6 +534,51 @@ void dis_datetime_move_out_2()
 		index_last_font -= 4;
 		len--;
 	}
+}
+
+/**
+ * 【时间、日期、温度】下移出显示
+ */
+void dis_datetime_move_out_3()
+{
+	int len = strlen(display_time_string_buff);//TODO:临时解决长度问题
+	int index_last_font = (LED_NUM_COL  - (len * (FONT_WIDTH)))/ 2 - 1;//有效显示第一位
+	while(len)
+	{
+		for (int i = 7; i >= 0; --i)
+		{
+			display_buff[index_last_font]      <<= 1;
+			display_buff[index_last_font + 1]  <<= 1;
+			display_buff[index_last_font + 2]  <<= 1;
+			display_buff[index_last_font + 3]  <<= 1;
+			
+			dis_display();
+			delay(1);
+		}
+		index_last_font += 4;
+		len--;
+	}
+}
+
+/**
+ * 【时间、日期、温度】右移出显示
+ */
+void dis_datetime_move_out_4()
+{
+	byte _t_buff[LED_NUM_COL] = {};
+	memcpy(_t_buff, display_buff, LED_NUM_COL);
+
+	for (int i = 1; i < LED_NUM_COL; ++i)
+	{
+		memset(display_buff, 0x00, LED_NUM_COL);
+		memcpy(display_buff + i, _t_buff, LED_NUM_COL - i);
+		dis_display();
+		delay(1);
+	}
+	//最后一位
+	memset(display_buff, 0x00, LED_NUM_COL);
+	dis_display();
+	//delay(5);
 }
 
 /**
@@ -549,7 +616,7 @@ void dis_datetime_move_in_2()
 	memcpy(_t_buff, display_buff, LED_NUM_COL);
 	memset(display_buff, 0x00, LED_NUM_COL);
 	int len = strlen(display_time_string_buff);//临时解决长度问题
-	int index_last_font = (LED_NUM_COL  + (len * (FONT_WIDTH)))/ 2 - 1;//最后一位
+	int index_last_font = (LED_NUM_COL  + (len * (FONT_WIDTH)))/ 2 - 1;//最后一位,3个点阵的情况下，总列数为24，但采用了剧中显示，实际最后一列有效位在22
 	while(len)
 	{
 		for (int i = 7; i >= 0; --i)
@@ -565,6 +632,58 @@ void dis_datetime_move_in_2()
 		index_last_font -= 4;
 		len--;
 	}
+}
+
+/**
+ * 【时间、日期、温度】下移入显示 
+ */
+void dis_datetime_move_in_3()
+{
+	byte _t_buff[LED_NUM_COL] = {};
+	memcpy(_t_buff, display_buff, LED_NUM_COL);
+	memset(display_buff, 0x00, LED_NUM_COL);
+	int len = strlen(display_time_string_buff);//临时解决长度问题
+	int indes_first_font = (LED_NUM_COL  - (len * (FONT_WIDTH)))/ 2 - 1;//可显示字符第一位
+	while(len)
+	{
+		for (int i = 7; i >= 0; --i)
+		{
+			display_buff[indes_first_font]      = _t_buff[indes_first_font]       >> i;
+			display_buff[indes_first_font + 1]  = _t_buff[indes_first_font + 1]   >> i;
+			display_buff[indes_first_font + 2]  = _t_buff[indes_first_font + 2]   >> i;
+			display_buff[indes_first_font + 3]  = _t_buff[indes_first_font + 3]   >> i;
+			
+			dis_display();
+			delay(1);
+		}
+		indes_first_font += 4;
+		len--;
+	}
+}
+
+/**
+ * 【时间、日期、温度】右移入显示
+ */
+void dis_datetime_move_in_4()
+{
+	byte _t_buff[LED_NUM_COL] = {};
+	memcpy(_t_buff, display_buff, LED_NUM_COL);
+	memset(display_buff, 0x00, LED_NUM_COL);
+
+	for (int i = 1; i < (LED_NUM_COL + 1); ++i)
+	{
+		memcpy(display_buff, _t_buff + LED_NUM_COL - i, i);
+		dis_display();
+		delay(1);
+	}
+	//缓冲动画
+	memcpy(display_buff + 1, _t_buff, LED_NUM_COL - 1);
+	memset(display_buff, 0x00, 1);
+	dis_display();
+	delay(20);
+	memcpy(display_buff, _t_buff, LED_NUM_COL);
+	dis_display();
+	delay(5);
 }
 
 /**
@@ -652,8 +771,8 @@ void dis_relese_temp()
  */
 void dis_display_date2time_trans(byte t)
 {
-	int r = random(1, 3);
-	dis_set_datetimetemp_dis_buff();
+	int r = random(1, 5);
+	dis_set_datetimetemp_dis_buff();//显示数据获取
 	switch(r)
 	{
 		case 1:
@@ -661,6 +780,12 @@ void dis_display_date2time_trans(byte t)
 			break;
 		case 2:
 			dis_datetime_move_out_2();
+			break;
+		case 3:
+			dis_datetime_move_out_3();
+			break;
+		case 4:
+			dis_datetime_move_out_4();
 			break;
 		default:
 			dis_datetime_move_out();
@@ -680,7 +805,7 @@ void dis_display_date2time_trans(byte t)
 		default:
 			dis_relese_time();
 	}
-	r = random(1, 3);
+	r = random(1, 5);
 	switch(r)
 	{
 		case 1:
@@ -688,6 +813,12 @@ void dis_display_date2time_trans(byte t)
 			break;
 		case 2:
 			dis_datetime_move_in_2();
+			break;
+		case 3:
+			dis_datetime_move_in_3();
+			break;
+		case 4:
+			dis_datetime_move_in_4();
 			break;
 		default:
 			dis_datetime_move_in();
@@ -977,7 +1108,7 @@ time_t ntp_get_time()
 /**
  * 同步时间，更新rtc时间
  */
-void ntp_sync_time()
+bool ntp_sync_time()
 {
 	byte i = 10;
 	while(i--)//尝试10次
@@ -986,10 +1117,56 @@ void ntp_sync_time()
 		if(_t)//获取到时间
 		{
 			rtc_set_time(_t);
-			return;
+			return true;
 		} 
 		delay(1000);
 	}
+	return false;
+}
+
+/**
+ * 定时自动更新时间
+ */
+
+void ntp_auto_sync_time()
+{
+	wifi_init();//开启wifi,并自动通过两种方式进行网络的连接
+	byte connect_count = 50;
+	while (WiFi.status() != WL_CONNECTED) 
+	{
+		delay(500);
+		DOUT(".");
+		connect_count--;
+		if(0 == connect_count)//wifi连接超时，返回，不同步时间
+		{
+			DOUT("Wifi Connect timeout!");
+			char ss[] = "Wifi Connect timeout!";
+			dis_display_string(ss);
+			delay(1000);
+			return;
+		}
+
+	}
+	DOUT("Wifi Connected!");
+	char ss[] = "Wifi Connected ";
+	dis_display_string(ss);
+	delay(1000);
+	bool sync_time_bool = ntp_sync_time();
+	if(sync_time_bool)
+	{
+		DOUT("Auto sync time Success!");
+		char ss[] = "Auto sync time Success!";
+		dis_display_string(ss);
+	}
+	else
+	{
+		DOUT("Auto sync time Failed!");
+		char ss[] = "Auto sync time Failed!";
+		dis_display_string(ss);
+	}
+	delay(1000);
+	//关闭wifi
+	WiFi.mode(WIFI_OFF);
 }
 /******************************************************************
  * ADC程序部分
@@ -1165,22 +1342,23 @@ void setup()
 	ntp_udp_init();
 	
 	ntp_sync_time();
-	delay(1000);
+	delay(200);
+	//关闭wifi
+	WiFi.mode(WIFI_OFF);
+
+	dis_datetime_move_out();
+	dis_set_timedate_dis_buff();
+	display_time_string_buff[2] = 0x01;
+	dis_relese_time();
+	dis_datetime_move_in();
+
 }
 
-int count = 0;//显示计数器
+int count = 1;//显示计数器
 byte t_flag = 1;//显示内容标识
 
 void loop() 
 {
-	//显示时间，动态间隔
-	if(1 == t_flag){
-		dis_set_timedate_dis_buff();
-		display_time_string_buff[2] = (display_time_string_buff[2] == 0x01)?0x02:0x01;
-		dis_relese_time();
-		dis_display();
-	}
-
 	byte t = count % 14 ;
 	switch(t)
 	{
@@ -1205,11 +1383,23 @@ void loop()
 
 	if(28800 == count)//每7小时尝试NTP授时
 	{
-		ntp_sync_time();
+		DOUT("Begin auto sync time");
+		char ss[] = "Begin auto sync time";
+		dis_display_string(ss);
+		delay(1000);
+		ntp_auto_sync_time();//开启wifi,自动更新时间
 	}
 
 	dis_auto_set_intensity();//自动亮度
 
 	count = count>=30000?0:(count+1);//计数器重置
 	delay(990);
+
+	//显示时间，动态间隔，放在最后，防止启动第一次显示两次
+	if(1 == t_flag){
+		dis_set_timedate_dis_buff();
+		display_time_string_buff[2] = (display_time_string_buff[2] == 0x01)?0x02:0x01;
+		dis_relese_time();
+		dis_display();
+	}
 }
