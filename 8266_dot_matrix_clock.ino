@@ -19,7 +19,7 @@
 //https://github.com/PaulStoffregen/OneWire
 #include "OneWire.h" 
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define DOUT(w) Serial.println(w)
 #define DOUTH(w,h) Serial.println(w,h)
@@ -400,7 +400,7 @@ void dis_load_string_in_disbuff(char s[])
 	while (len)
 	{
 		//一次读取4个字节，点阵字库的一个显示字符
-		int _ft_index = (*_p) * (FONT_WIDTH);
+		int _ft_index = (*_p) * (FONT_WIDTH);//ASCII值*字宽，取字转换
 		display_buff[i++] = pgm_read_byte(font + _ft_index);
 		display_buff[i++] = pgm_read_byte(font + _ft_index + 1);
 		display_buff[i++] = pgm_read_byte(font + _ft_index + 2);
@@ -416,14 +416,13 @@ void dis_load_string_in_disbuff(char s[])
 /**
  * 【滚动】所有显示数据加载到动态显示数组上
  * @param char s[] 显示内容
- * @param DISPLAY_ARR * d_arr 动态显示数组指印
+ * @param DISPLAY_ARR * d_arr 动态显示数组指针
  */
 void dis_load_display_string_in_disarray(char s[], DISPLAY_ARR * d_arr)
 {
 	char * _p = s;
-	//TODO:显示字符大于申请内存,不处理多于内容 
 	int i = 0;
-	int len = ((*d_arr)->size) / FONT_WIDTH;
+	int len = ((*d_arr)->size) / FONT_WIDTH;//根据申请内存设置显示数据长度，避免移除
 	while (len)
 	{
 		//一次读取4个字节，点阵字库的一个显示字符

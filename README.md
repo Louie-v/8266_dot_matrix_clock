@@ -1,6 +1,8 @@
 # 关于8266_dot_matrix_clock
 ---
 基于ESP8266和Arduino项目的点阵时钟
+# 迁移
+2019.9.3 从[GitHub](https://github.com/Louie-v/8266_dot_matrix_clock) 迁移至 [GitEe](https://gitee.com/louie-v/8266_dot_matrix_clock)
 
 # 功能
 
